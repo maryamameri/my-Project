@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Grid Example</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="{{url_for('static', filename='bootstrap_5.3.0.min.css')}}" rel="stylesheet">
+  <script src="{{url_for('static', filename='bootstrap_5.3.0.bundle.min.js')}}"></script>
+  <script src="{{url_for('static', filename='jquery-3.6.0.min.js')}}"></script>
+  <script src="{{url_for('static', filename='chart.js_2.5.0.min.js')}}"></script>
+  <style>
+    .container {
+          margin-top: 20px;
+      }
+
+      .button-container {
+          display: block;
+          margin-top: 10px;
+      }
+
+      .button-container span {
+          display: block;
+          margin-bottom: 5px;
+      }
+
+      .badge {
+          display: block;
+          width: 18%;
+          padding: 10px;
+          text-align: center;
+      }
+
+      .bg-success {
+          background-color: green;
+          color: white;
+      }
+
+      .bg-danger {
+          background-color: red;
+          color: white;
+      }
+      
+     .chart-container {
+    
+    max-width: 100%;
+    margin: 0 auto;
+  }
+
+  canvas {
+    max-width: 100%;
+    height: auto;
+  }
+  
+  .radio-group {
+  display: flex;
+  align-items: center;
+}
+
+.radio-group label {
+  margin-right: 10px;
+}
+      @media (min-width: 769px) {
+    .chart-container {
+      max-width: 600px;
+      position: absolute;
+      top: 25%;
+      right: 350px;
+      transform: translateY(-50%);
+    }
+    canvas {
+      width: 600px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .chart-container {
+      position: static; 
+      max-width: 100%; 
+    }
+    canvas {
+      width: 100%;
+    }
+  }
+  
+ .btn-custom {
+    background-color: #FFA500; /* Adjust this hex value to the desired shade of yellow-orange */
+    border-color: #FFA500; /* Match the border color if needed */
+    /* Any other styling you want to apply */
+}
+
+
+
+  </style>
+  
+</head>
+
+<body>  
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-sm-3">
+          <div class="container mt-5">
+            <div class="row">
+              <div class="col-sm-9">
+                 <h2>Radar Settings</h2>
+
+  <div class="row mt-3">
+    <div class="col-md-12">
+      <button type="button" class="btn btn-primary" id="Single-measurement">Single<br>measurement</button>
+      <button type="button" class="btn btn-custom" id="settings" style="width: 120px; height: 63px;"><span class="mx-auto">Settings</span></button>
+
+
+    </div>
+  </div>
+
+  <div class="row mt-5">
+    <div class="col-md-12">
+      <button type="button" class="btn btn-success" id="Continuous-measurement">Continuous<br>measurement</button>
+      <button type="button" class="btn btn-danger" id="stop-measurement">Stop<br>measurement</button>
+    </div>
+    </div>
+          </div>
+          </div>
+        </div>
+      </div>
+
+<script>
+  document.getElementById("settings").addEventListener("click", function() {
+    window.location.href = "/settings"; // Updated path
+  });
+</script>  
+
+<script>
+function resetDefaults() {
+    $("#tx-attenuator").val("");
+    $("#prf").val("");
+    $("#spreading-factor").val("");
+    $("#check1").prop("checked", true);
+    $("#check2").prop("checked", false);
+
+    // Clear error messages
+    $("#tx-attenuator-error").text("");
+    $("#prf-error").text("");
+    $("#spreading-factor-error").text("");
+  }
+
+  $("#reset-default").click(function() {
+    resetDefaults();
+  });
+
+$(document).ready(function() {
+  $("#apply-settings").click(function() {
+  console.log("Apply button clicked");
+    var enable_rf_switch_tx = $("#check1").prop("checked") ? 1 : 0;
+    var enable_rf_switch_lo = $("#check2").prop("checked") ? 1 : 0;
+    
+    var prf = $("#prf").val();
+    var txAttenuator = $("#tx-attenuator").val();
+    var SpreadingFactor = $("#spreading-factor").val();
+    
+    txAttenuator = parseFloat(txAttenuator);
+    prf = parseFloat(prf);
+    SpreadingFactor = parseFloat(SpreadingFactor);
+
+    if (isNaN(txAttenuator) || txAttenuator < 0 || txAttenuator > 31.75) {
+      $("#tx-attenuator-error").text("The value is invalid");
+      return; 
+    } else {
+      const calculatedValue = (txAttenuator * 4) % 1;
+      if (calculatedValue !== 0) {
+        $("#tx-attenuator-error").text("The value is invalid");
+        return;
+      } else {
+        $("#tx-attenuator-error").text("");
+      }
+    }
+
+    if (isNaN(prf) || prf < 100 || prf > 1000) {
+      $("#prf-error").text("The value is invalid");
+      return; 
+    } else {
+      $("#prf-error").text("");
+    }
+    
+    if (isNaN(SpreadingFactor) || SpreadingFactor < 1000 || SpreadingFactor >= 10000) {
+      $("#spreading-factor-error").text("The value is invalid");
+      return; 
+    } else {
+      $("#spreading-factor-error").text("");
+    }
+
+   if ($('#check4').is(':checked')) {
+      updateChart();
+    }
+
+    $.ajax({
+      url: '/apply_settings',
+      type: 'POST',
+      data: {
+        tx_attenuator: txAttenuator,
+        prf: prf,
+        spreading_factor: SpreadingFactor,
+        enable_rf_switch_tx: enable_rf_switch_tx,
+        enable_rf_switch_lo: enable_rf_switch_lo,
+      },
+      success: function(data) {
+        console.log(data);
+      },
+      error: function() {
+        console.error("Error sending request");
+      }
+    });
+  });
+});
+
+</script>
+
+<script>
+
+$(document).ready(function() {
+  $("#Single-measurement").click(function() {
+    var enable_m_sequence = $("#check3").prop("checked") ? 1 : 0;
+    var save_directory = $("#Save-directory").val();
+    var m_sequence_len = $("#M-Sequence_len").val();
+    m_sequence_len = parseFloat(m_sequence_len);
+
+    if (isNaN(m_sequence_len) || m_sequence_len < 4 || m_sequence_len > 14) {
+      $("#M-Sequence_len-error").text("The value is invalid. Enter a number between 4 and 14.");
+      return; 
+    } else {
+      $("#M-Sequence_len-error").text("");
+    }
+    
+    $.ajax({
+      url: '/single_measurement',
+      type: 'POST',
+      data: {
+        enable_m_sequence: enable_m_sequence,
+        save_directory: save_directory,
+        m_sequence_len: m_sequence_len,
+      },
+      success: function(data) {
+        
+        console.log(data);
+      },
+      error: function() {
+        
+        console.error("Error sending request");
+      }
+    });
+  });
+ 
+ var enable_m_sequence = $("#check2").prop("checked") ? 1 : 0;
+ 
+});
+
+</script>   
+    <div class="col-sm-3">
+      <div class="container mt-5">
+        <div class="row">
+          <div class="col-sm-9">
+            <h2>Measurement</h2>
+
+    <div class="row mb-3">
+      <div class="col-md-5">
+        <label for="TOM">TOM</label>
+      </div>
+      <div class="col-md-7">
+        <input type="text" id="TOM" name="TOM" readonly onfocus="this.blur()" style="width: 90%;">
+      </div>
+    </div>
+    <div class="row mb-3">
+      <div class="col-md-5">
+        <label for="Temp-PA">TempPA</label>
+      </div>
+      <div class="col-md-7">
+        <input type="text" id="Temp-PA" name="Temp-PA" readonly onfocus="this.blur()" style="width: 90%;">
+      </div>
+    </div>
+    <div class="row mb-3">
+      <div class="col-md-5">
+        <label for="TX-attenuator">TX&nbsp;attenuator</label>
+      </div>
+      <div class="col-md-7">
+        <input type="text" id="TX-attenuator" name="TX-attenuator" readonly onfocus="this.blur()" style="width: 90%;">
+      </div>
+    </div>
+    <div class="row mb-3">
+      <div class="col-md-5">
+        <label for="PRF">PRF</label>
+      </div>
+      <div class="col-md-7">
+        <input type="text" id="PRF" name="PRF" readonly onfocus="this.blur()" style="width: 90%;">
+      </div>
+    </div>
+    <div class="row mb-3">
+      <div class="col-md-5">
+        <label for="Spreading-factor">Spreading&nbsp;factor</label>
+      </div>
+      <div class="col-md-7">
+        <input type="text" id="Spreading-factor" name="Spreading-factor" readonly onfocus="this.blur()" style="width: 90%;">
+      </div>
+    </div>
+    <div class="row mb-3">
+      <div class="col-md-5">
+        <label for="M-sequence-enabled">M-Sequence enabled</label>
+      </div>
+      <div class="col-md-7">
+        <input type="text" id="M-sequence-enabled" name="M-sequence-enabled" readonly onfocus="this.blur()" style="width: 90%;">
+      </div>
+    </div>
+    <div class="row mb-3">
+      <div class="col-md-5">
+        <label for="M-Sequence-len">M-Sequence len</label>
+      </div>
+      <div class="col-md-7">
+        <input type="text" id="M-Sequence-len" name="M-Sequence-len" readonly onfocus="this.blur()" style="width: 90%;">
+      </div>
+          <div class="row mt-3">
+            <div class="col-md-12">
+              
+                 
+             </div>
+            </div>
+             </div>
+              </div>
+                 </div>
+               </div>
+             </div>
+    
+
+<div class="col-sm-3">
+  <div class="container mt-5">
+    <div class="row">
+      <div class="col-sm-9">
+            <h2>Plot Options</h2>
+   
+   <div class="row mb-6">
+     <div class="col-md-3">
+       <label class="form-check-label" for="check4">Update&nbsp;plot</label>
+     </div>
+     <div class="col-md-9">
+       <input type="checkbox" class="form-check-input" id="check4" name="update_plot">
+     </div>
+  </div>
+  <div class="row mb-3">
+    <div class="col-md-5">
+      <label for="Eps-r">Eps_r</label>
+    </div>
+    <div class="col-md-7">
+      <input type="text" id="Eps-r" name="Eps-r" style="width: 40%;">
+       </div>
+       </div>  
+
+ <div class="row mb-3">
+   <div class="col-md-5">
+     <label for="trigger">Trigger</label>
+   </div>
+   
+   <div class="col-md-7 d-flex align-items-center">
+     <input type="radio" id="contactChoice1" name="contact" value="0"/>
+     <label for="contactChoice1" class="me-3">0</label>
+
+     <input type="radio" id="contactChoice2" name="contact" value="1"/>
+     <label for="contactChoice2" class="me-3">1</label>
+
+     <input type="radio" id="contactChoice3" name="contact" value="2"/>
+     <label for="contactChoice3" class="me-3">2</label>
+     
+     <input type="radio" id="contactChoice4" name="contact" value="3"/>
+     <label for="contactChoice4" class="me-3">3</label>
+
+   </div> 
+ </div>
+
+ <div class="row mb-3">
+   <div class="col-md-5">
+     <label for="adc">ADC</label>
+   </div>
+   
+   <div class="col-md-7 d-flex align-items-center">
+     <div class="form-check form-check-inline">
+       <input class="form-check-input" type="checkbox" id="adcChoice1" name="ADC" value="0">
+       <label class="form-check-label" for="adcChoice1">0</label>
+     </div>
+     
+     <div class="form-check form-check-inline">
+       <input class="form-check-input" type="checkbox" id="adcChoice2" name="ADC" value="1">
+       <label class="form-check-label" for="adcChoice2">1</label>
+     </div>
+     
+     <div class="form-check form-check-inline">
+       <input class="form-check-input" type="checkbox" id="adcChoice3" name="ADC" value="2">
+       <label class="form-check-label" for="adcChoice3">2</label>
+     </div>
+     
+     <div class="form-check form-check-inline">
+       <input class="form-check-input" type="checkbox" id="adcChoice4" name="ADC" value="3">
+       <label class="form-check-label" for="adcChoice4">3</label>
+     </div>
+   </div>
+ </div>
+
+ 
+ <div class="row mb-3">
+   <div class="col-md-6">
+     <label for="x-limit-min">X lim min</label>
+   </div>
+   
+   <div class="col-md-4">
+     <input type="text" id="x-limit-min" name="x_limit_min" class="form-control form-control-sm">
+   </div>
+   
+   <div class="col-md-2 d-flex align-items-center">
+     <div class="form-check">
+       <input class="form-check-input" type="checkbox" id="enable-x-limit-min" name="enable_x_limit_min">
+       <label class="form-check-label" for="enable-x-limit-min">Enable</label>
+     </div>
+   </div>
+ </div>
+
+ <div class="row mb-3">
+   <div class="col-md-6">
+     <label for="x-limit-min">X lim max</label>
+   </div>
+   
+   <div class="col-md-4">
+     <input type="text" id="x-limit-max" name="x_limit_max" class="form-control form-control-sm">
+   </div>
+   
+   <div class="col-md-2 d-flex align-items-center">
+     <div class="form-check">
+       <input class="form-check-input" type="checkbox" id="enable-x-limit-max" name="enable_x_limit_max">
+       <label class="form-check-label" for="enable-x-limit-max">Enable</label>
+     </div>
+   </div>
+ </div>
+
+ <div class="row mb-3">
+   <div class="col-md-6">
+     <label for="x-limit-min">Y lim min</label>
+   </div>
+   
+   <div class="col-md-4">
+     <input type="text" id="y-limit-min" name="y_limit_min" class="form-control form-control-sm">
+   </div>
+   
+   <div class="col-md-2 d-flex align-items-center">
+     <div class="form-check">
+       <input class="form-check-input" type="checkbox" id="enable-y-limit-min" name="enable_y_limit_min">
+       <label class="form-check-label" for="enable-y-limit-min">Enable</label>
+     </div>
+   </div>
+ </div>
+
+ <div class="row mb-3">
+   <div class="col-md-6">
+     <label for="x-limit-min">Y lim max</label>
+   </div>
+   
+  <div class="col-md-4">
+  <input type="text" id="y-limit-max" name="y_limit_max" class="form-control form-control-sm">
+</div>
+<div class="col-md-2 d-flex align-items-center">
+  <div class="form-check">
+    <input class="form-check-input" type="checkbox" id="enable-y-limit-max" name="enable_y_limit_max">
+    <label class="form-check-label" for="enable-y-limit-max">Enable</label>
+     </div>
+   </div>
+ </div>
+
+ <div class="row mt-3">
+   <div class="col-md-12">
+      <button type="button" class="btn btn-danger btn-lg me-3" id="default-button">Default</button>
+        <button type="button" class="btn btn-primary btn-lg" id="apply-button">Apply</button>
+    </div>
+   </div>
+    </div>
+     </div>
+        </div>
+      </div>
+    </div>
+    
+<div class="container-fluid">
+  <div class="row">
+    <div class="col">
+      <canvas id="myChart" style="width: 100%; height: 300px;" class="mt-3"></canvas>
+    </div>
+  </div>
+</div>
+
+
+
+<script>
+
+var myChart;
+var isUpdating = true;
+var initialData = [];
+
+var colors = [  
+"rgb(0,113.985,188.955)",
+"rgb(216.75,82.875,24.99)",
+"rgb(236.895,176.97,31.875)",
+"rgb(125.97,46.92,141.78)",
+"rgb(118.83,171.87,47.94)",
+"rgb(76.755,189.975,237.915)",
+"rgb(161.925,19.89,46.92)",
+"rgb(255,0,255)",
+"rgb(0,255,0)",
+"rgb(0,0,255)",
+"rgb(0,255,255)",
+"rgb(255,0,255)",
+"rgb(255,255,0)",
+"rgb(0,0,0)",
+];
+
+function getInitialDataSet(Nr, Data){
+    var initialDataSet = {
+        fill: false,
+        pointRadius: 2,
+        borderColor: colors[Nr],
+        data: Data,
+        
+    };
+    return initialDataSet;
+}
+
+function updateChart(newData) {
+    console.log("New data received:", newData);
+
+    var datasets = [];
+    
+    for (var i = 0; i < newData.x_values.length; i++) {
+        var dataFormatted = newData.x_values[i].map((v, j) => ({ x: v, y: newData.y_values[i][j] }));
+        dataFormatted.sort(function(a, b) {
+            return ((a.x < b.x) ? -1 : ((a.x == b.x) ? 0 : 1));
+        });
+
+        newDataset = getInitialDataSet(i, dataFormatted);
+        
+        datasets.push(newDataset);
+    }
+
+    myChart.data.datasets = datasets;
+    myChart.update();
+    
+    $("#TOM").val(newData.TOM);
+}
+
+$('#default-button').click(function() {
+    setDefaultValues();
+});
+
+
+
+function setDefaultValues() {
+    $('#check4').prop('checked', true);  
+    $('#Eps-r').val('3.15');             
+    $('[name="contact"][value="0"]').prop('checked', true);  
+    $('[name="ADC"]').prop('checked', true);     
+}
+
+function applyValues() {
+ 
+    // read limits from text boxes
+    var yMin = readIntFromTextbox("#y-limit-min", -2047, 2047);
+    var yMax = readIntFromTextbox("#y-limit-max", -2047, 2047);
+    var xMin = readIntFromTextbox("#x-limit-min", 0, 1000);
+    var xMax = readIntFromTextbox("#x-limit-max", 0, 1000);
+    
+    console.log("mychart.data.datasets.length:",myChart.data.datasets.length);
+    console.log("mychart:",myChart);
+    
+    if(document.getElementById("enable-x-limit-min").checked && xMin != null){
+        myChart.options.scales.xAxes[0].ticks.min = xMin;
+    }else{
+        delete(myChart.options.scales.xAxes[0].ticks.min);
+    }
+         
+    if(document.getElementById("enable-x-limit-max").checked && xMax != null){
+        myChart.options.scales.xAxes[0].ticks.max = xMax;
+    }else{
+        delete(myChart.options.scales.xAxes[0].ticks.max);
+    }
+         
+    if(document.getElementById("enable-y-limit-min").checked && yMin != null){
+        myChart.options.scales.yAxes[0].ticks.min = yMin;
+    }else{
+        delete(myChart.options.scales.yAxes[0].ticks.min);
+    }
+             
+    if(document.getElementById("enable-y-limit-max").checked && yMax != null){
+        myChart.options.scales.yAxes[0].ticks.max = yMax;
+    }else{
+        delete(myChart.options.scales.yAxes[0].ticks.max);
+    }
+    
+    myChart.update();
+}
+
+function readIntFromTextbox(textBoxName, minVal, maxVal){
+    // read textbox entry, parse to INT value, clip to min and max range
+    var val = $(textBoxName).val();    
+    var valInt = parseInt(val);
+    var valClipped = Math.max( minVal, Math.min(valInt, maxVal));   
+    if(isNaN(valClipped)){
+        return null;
+    }
+    return valClipped;
+}    
+var myChart;
+var isUpdating = false;
+var updateInterval;
+$(document).ready(function() {
+
+$('#apply-button').click(function() {
+        if ($('#check4').is(':checked')) {
+            if (!isUpdating) {
+                isUpdating = true; // Set the flag to start updating the chart
+                fetchDataAndUpdateChart();
+            }
+        } else {
+            isUpdating = false; // Set the flag to stop updating the chart
+            clearInterval(updateInterval); // Stop fetching data
+        }
+    });
+    
+  $('#check4').change(function() {
+        if ($(this).is(':checked')) {
+            $('#apply-button').prop('disabled', false); // Enable Apply button if Update Plot is checked
+            if (isUpdating) {
+                fetchDataAndUpdateChart(); // Start updating the chart if previously checked
+            }
+        } else if (!isUpdating) {
+            $('#apply-button').prop('disabled', true); // Disable Apply button if Update Plot is unchecked without using Apply
+        }
+    });
+    
+     
+    
+  var ctx = document.getElementById("myChart").getContext("2d");
+  var adcValues = ['ADC0'];
+  myChart = new Chart(ctx, {
+   type: 'scatter',
+   data: {
+           datasets: [
+      {
+        label: adcValues[0],
+        backgroundColor: colors[0],
+        borderColor: colors[0],
+        //... other dataset properties
+      }
+    ]
+  },
+  options: {
+    scales: {
+      xAxes: [{
+        scaleLabel: {
+          display: true,
+          labelString: 'Range [m]', 
+        }
+      }],
+      yAxes: [{
+        scaleLabel: {
+          display: true,
+          labelString: 'ADC value', 
+        }
+      }]
+    },
+    legend: {
+      display: false
+    },
+    title: {
+      display: false,
+      text: "Plot Title",
+      fontSize: 16,
+     },
+   },
+});
+
+  
+function fetchDataAndUpdateChart() {
+  updateInterval = setInterval(function() {
+            if (!isUpdating) {
+                clearInterval(updateInterval); // Stop the interval if isUpdating becomes false midway
+                return;
+            }
+    $.getJSON('/get_data', function(data) {
+      console.log("Fetched data:", data);
+      updateChart(data);
+      var randomTemperature = (Math.random() * 100).toFixed(1);
+      $("#Temp-PA").val(randomTemperature + "° C");
+      var randomTXAttenuator = (Math.random() * 31.75).toFixed(2);
+    $("#TX-attenuator").val(randomTXAttenuator + " dB");
+    var randomPRF = Math.floor(Math.random() * (1000000 - 100000 + 1)) + 100000;
+    if (randomPRF >= 1000000) {
+      $("#PRF").val((randomPRF / 1000000).toFixed(2) + " MHz");
+    } else {
+      $("#PRF").val(randomPRF + " kHz");
+    }
+    var randomSpreadingFactor = Math.floor(Math.random() * (10000 - 100 + 1)) + 100;
+    $("#Spreading-factor").val(randomSpreadingFactor);
+    var mSequenceEnabled = Math.random() < 0.5 ? 'Yes' : 'No';
+    $("#M-sequence-enabled").val(mSequenceEnabled);
+    var randomMSequenceLen = Math.floor(Math.random() * (14 - 4 + 1)) + 4;
+    $("#M-Sequence-len").val(randomMSequenceLen);
+    
+    });
+    }, 5000);
+  }
+
+ 
+  
+  setInterval(fetchDataAndUpdateChart, 5000);
+
+});
+</script>
+
+
+</body>
+</html>

@@ -1,0 +1,280 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Grid Example</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="{{url_for('static', filename='bootstrap_5.3.0.min.css')}}" rel="stylesheet">
+  <script src="{{url_for('static', filename='bootstrap_5.3.0.bundle.min.js')}}"></script>
+  <script src="{{url_for('static', filename='jquery-3.6.0.min.js')}}"></script>
+  <script src="{{url_for('static', filename='chart.js_2.5.0.min.js')}}"></script>
+  
+ <script>
+function goBack() {
+  window.history.back();
+}
+</script>
+ 
+</head>
+
+
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-sm-4">
+      <div class="container mt-5">
+        <div class="row">
+          <div class="col-sm-9">
+             <h2>Radar Settings</h2>
+
+  <form action="/apply_settings">
+    <div class="row mb-3">
+      <div class="col-md-5">
+        <label for="tx-attenuator">TX attenuator (0-31.75)</label>
+      </div>
+      <div class="col-md-7">
+        <input type="text" id="tx-attenuator" name="tx_attenuator" style="width: 50%;">
+        <span id="tx-attenuator-error" class="text-danger"></span>
+        <div id="tx-attenuator-values"></div>
+      </div>
+    </div>
+
+    <div class="row mb-3">
+      <div class="col-md-5">
+        <label for="prf">prf (100kHz – 1000kHz)</label>
+      </div>
+      <div class="col-md-7">
+        <input type="text" id="prf" name="prf" style="width: 50%;">
+        <span id="prf-error" class="text-danger"></span>
+        <div id="prf-values"></div>
+      </div>
+    </div>
+
+    <div class="row mb-3">
+      <div class="col-md-5">
+        <label for="spreading-factor">Spreading factor (1000-10000)</label>
+      </div>
+      <div class="col-md-7">
+        <input type="text" id="spreading-factor" name="spreading-factor" style="width: 50%;">
+        <span id="spreading-factor-error" class="text-danger"></span>
+        <div id="spreading-factor-values"></div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-6">
+        <label class="form-check-label" for="check1">Enable&nbsp;RF&nbsp;switch&nbsp;TX</label>
+      </div>
+      <div class="col-md-6">
+        <input type="checkbox" class="form-check-input" id="check1" name="enable_rf_switch_tx">
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-6">
+        <label class="form-check-label" for="check2">Enable&nbsp;RF&nbsp;switch&nbsp;LO</label>
+      </div>
+      <div class="col-md-6">
+        <input type="checkbox" class="form-check-input" id="check2" name="enable_rf_switch_lo">
+      </div>
+    </div>
+    
+    <div class="row">
+      <div class="col-md-6">
+        <label class="form-check-label" for="check2">Enable&nbsp;M-Sequence</label>
+      </div>
+      <div class="col-md-6">
+        <input type="checkbox" class="form-check-input" id="check3" name="enable_m_sequence" value="1">
+      </div>
+    </div>
+    
+     <div class="row mb-3">
+       <div class="col-md-5">
+         <label for="M-Sequence_len">M-Sequence len (4-14)</label>
+       </div>
+       <div class="col-md-7">
+         <input type="text" id="M-Sequence_len" name="M-Sequence_len" style="width: 50%;">
+         <span id="M-Sequence_len-error" class="text-danger"></span>
+         <div id="M-Sequence_len-values"></div>
+       </div>
+     </div>
+    
+     <div class="row mb-3">
+       <div class="col-md-5">
+         <label for="Save-directory">Save directory</label>
+       </div>
+       <div class="col-md-7">
+         <input type="text" id="Save-directory" name="save_directory" style="width: 50%;">
+         <span id="Save-directory-error" class="text-danger"></span>
+         <div id="Save-directory-values"></div>
+       </div>
+     </div> 
+     
+     
+
+   <div class="row mt-3">
+    <div class="col-md-12">
+        <div class="d-grid gap-2">
+            <button type="button" class="btn btn-success" id="apply" style="height: 50px;">Apply</button>
+        </div>
+        <div class="d-grid gap-2 mt-4">
+            <button type="button" class="btn btn-danger btn-sm" id="reset-default" style="height: 50px;">Reset default</button>
+        </div>
+        <div class="d-grid gap-2 mt-4">
+           <button type="button" class="btn btn-primary btn-sm" id="cancel" onclick="goBack()" style="height: 50px;">Cancel</button>
+
+        </div>
+    </div>
+</div>
+</form>
+
+
+  
+          </div>
+        </div>
+      </div>
+    </div>
+ 
+ <script>
+function loadFormValuesFromLocalStorage() {
+    $('#tx-attenuator').val(localStorage.getItem('tx-attenuator') || '');
+    $('#prf').val(localStorage.getItem('prf') || '');
+    $('#spreading-factor').val(localStorage.getItem('spreading-factor') || '');
+    $('#M-Sequence_len').val(localStorage.getItem('M-Sequence_len') || '');
+    $('#Save-directory').val(localStorage.getItem('Save-directory') || '');
+
+    $('#check1').prop('checked', localStorage.getItem('check1') === 'true');
+    $('#check2').prop('checked', localStorage.getItem('check2') === 'true');
+    $('#check3').prop('checked', localStorage.getItem('check3') === 'true');
+}
+
+// Load form values from local storage when the document is ready
+$(document).ready(function () {
+    loadFormValuesFromLocalStorage();
+});
+
+// Function to save form values to local storage
+function saveFormValuesToLocalStorage() {
+    localStorage.setItem('tx-attenuator', $('#tx-attenuator').val());
+    localStorage.setItem('prf', $('#prf').val());
+    localStorage.setItem('spreading-factor', $('#spreading-factor').val());
+    localStorage.setItem('M-Sequence_len', $('#M-Sequence_len').val());
+    localStorage.setItem('Save-directory', $('#Save-directory').val());
+    localStorage.setItem('check1', $('#check1').prop('checked'));
+    localStorage.setItem('check2', $('#check2').prop('checked'));
+    localStorage.setItem('check3', $('#check3').prop('checked'));
+}
+
+function goBack() {
+    
+    saveFormValuesToLocalStorage();
+    window.history.back();
+}
+function setresetDefaultValues() { 
+     
+     
+     $('#tx-attenuator').val('31.75');
+     $('#prf').val('1000000');
+     $('#spreading-factor').val('10000');
+     $('#M-Sequence_len').val('4');
+     $('#Save-directory').val('default');
+     
+   }
+
+   
+   $("#reset-default").click(function() {
+     setresetDefaultValues();
+     saveFormValuesToLocalStorage();
+   });
+
+
+
+
+
+
+ $("#apply").click(function () {
+    console.log("Apply button clicked");
+
+    var errors = [];
+
+    var enable_rf_switch_tx = $("#check1").prop("checked") ? 1 : 0;
+    var enable_rf_switch_lo = $("#check2").prop("checked") ? 1 : 0;
+
+    var prf = $("#prf").val();
+    var txAttenuator = $("#tx-attenuator").val();
+    var SpreadingFactor = $("#spreading-factor").val();
+    var enable_m_sequence = $("#check3").prop("checked") ? 1 : 0;
+    var save_directory = $("#Save-directory").val();
+    var m_sequence_len = $("#M-Sequence_len").val();
+
+    txAttenuator = parseFloat(txAttenuator);
+    prf = parseFloat(prf);
+    SpreadingFactor = parseFloat(SpreadingFactor);
+    m_sequence_len = parseFloat(m_sequence_len);
+
+    if (isNaN(txAttenuator) || txAttenuator < 0 || txAttenuator > 31.75) {
+        errors.push("The value is invalid");
+    } else {
+        const calculatedValue = (txAttenuator * 4) % 1;
+        if (calculatedValue !== 0) {
+            errors.push("The value is invalid");
+        }
+    }
+
+    if (isNaN(prf) || prf < 100 || prf > 1000000) {
+        errors.push("The value is invalid");
+    }
+
+    if (isNaN(SpreadingFactor) || SpreadingFactor < 1000 || SpreadingFactor >= 10000) {
+        errors.push("The value is invalid");
+    }
+
+    if ($('#check4').is(':checked')) {
+        updateChart();
+    }
+
+    if (isNaN(m_sequence_len) || m_sequence_len < 4 || m_sequence_len > 14) {
+        errors.push("The value is invalid");
+    }
+
+    // Display all error messages
+$("#tx-attenuator-error").text(errors.includes("The value is invalid") ? "The value is invalid" : "");
+$("#prf-error").text(errors.includes("The value is invalid") ? "The value is invalid" : "");
+$("#spreading-factor-error").text(errors.includes("The value is invalid") ? "The value is invalid" : "");
+$("#M-Sequence_len-error").text(errors.includes("The value is invalid") ? "The value is invalid" : "");
+
+
+    // Check if there are any errors before making the AJAX call
+    if (errors.length > 0) {
+        return;
+    }
+
+    $.ajax({
+        url: '/apply',
+        type: 'POST',
+        data: {
+            tx_attenuator: txAttenuator,
+            prf: prf,
+            spreading_factor: SpreadingFactor,
+            enable_rf_switch_tx: enable_rf_switch_tx,
+            enable_rf_switch_lo: enable_rf_switch_lo,
+            enable_m_sequence: enable_m_sequence,
+            save_directory: save_directory,
+            m_sequence_len: m_sequence_len,
+        },
+        success: function (data) {
+            console.log(data);
+        },
+        error: function () {
+            console.error("Error sending request");
+        }
+    });
+});
+
+
+ </script>
+
+
+ 
