@@ -1,0 +1,383 @@
+import os
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.svm import SVC
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+from xgboost import XGBClassifier
+from sklearn.metrics import classification_report, accuracy_score, f1_score, precision_score, recall_score
+from sklearn.pipeline import make_pipeline
+
+
+def getDataFrameFromCSV(data_path):
+    """
+    Reads CSV files from the specified directory, combines them into a single DataFrame, and adds labels based on file names.
+
+    Parameters:
+    data_path (str): The path to the directory containing the CSV files.
+
+    Returns:
+    pd.DataFrame: Combined DataFrame with labels.
+    """
+    # configuration
+    file_import = ['avg']  # 'avg', 'std'
+
+    # Initialize empty lists to store DataFrames
+    approval_avg = pd.DataFrame()
+    approval_std = pd.DataFrame()
+    rejection_avg = pd.DataFrame()
+    rejection_std = pd.DataFrame()
+
+    if not os.path.exists(data_path):
+        raise ValueError(f"The directory {data_path} does not exist.")
+
+    # Loop through all files in the directory
+    for file_name in os.listdir(data_path):
+        if file_name.endswith(".csv"):
+            # Read the CSV file into a DataFrame
+            df = pd.read_csv(os.path.join(data_path, file_name))
+
+            # Add a column based on the file name
+            if "approval_avg" in file_name and "avg" in file_import:
+                df["label"] = 1
+                approval_avg = pd.concat([approval_avg, df], ignore_index=True)
+            elif "approval_std" in file_name and "std" in file_import:
+                df["label"] = 1
+                approval_std = pd.concat([approval_std, df], ignore_index=True)
+            elif "rejection_avg" in file_name and "avg" in file_import:
+                df["label"] = 0
+                rejection_avg = pd.concat([rejection_avg, df], ignore_index=True)
+            elif "rejection_std" in file_name and "std" in file_import:
+                df["label"] = 0
+                rejection_std = pd.concat([rejection_std, df], ignore_index=True)
+
+    # Combine all approval and rejection DataFrames
+    if 'avg' in file_import:
+        data_avg = pd.concat([approval_avg, rejection_avg], ignore_index=True)
+        print("Data Average:\n", data_avg)
+
+    if 'std' in file_import:
+        data_std = pd.concat([approval_std, rejection_std], ignore_index=True)
+        print("Data Std:\n", data_std)
+
+    if 'avg' in file_import and 'std' in file_import:
+        # modify column names of avg and std
+        data_avg.columns = [
+            col + '_avg' if col not in ['label', 'patient'] else col
+            for col in data_avg.columns
+        ]
+
+        data_std.columns = [
+            col + '_std' if col not in ['label', 'patient'] else col
+            for col in data_std.columns
+        ]
+
+        # Combine data_avg and data_std
+        data = pd.concat([data_avg, data_std], axis=1)
+        data = data.loc[:, ~data.columns.duplicated()]  # Remove duplicate columns
+        print("Data:\n", data)
+    elif 'avg' in file_import:
+        return data_avg
+    elif 'std' in file_import:
+        return data_std
+
+    return data
+
+
+def store_DataFrame(data, path):
+    """
+    Stores the DataFrame to a CSV file.
+
+    Parameters:
+    data (pd.DataFrame): The DataFrame to be stored.
+    path (str): The path where the DataFrame will be stored.
+    """
+    directory = os.path.dirname(path)
+    os.makedirs(directory, exist_ok=True)
+    data.to_csv(path, index=False)
+    print(f"DataFrame stored to {path}")
+
+
+def check_duplicate_columns(df):
+    """
+    Checks for duplicate column names in the DataFrame.
+
+    Parameters:
+    df (pd.DataFrame): The DataFrame to be checked.
+
+    Returns:
+    None
+    """
+    columns = df.columns
+    duplicates = [col for col in columns if columns.tolist().count(col) > 1]
+    unique_duplicates = list(set(duplicates))
+    if unique_duplicates:
+        print("Duplicate column names:", unique_duplicates)
+    else:
+        print("The DataFrame does not have duplicate column names.")
+
+
+def check_columns_existence(data, column_names):
+    """
+    Checks if the specified columns exist in the DataFrame.
+
+    Parameters:
+    data (pd.DataFrame): The DataFrame to be checked.
+    column_names (list): List of column names to check for existence.
+
+    Returns:
+    None
+    """
+    # Get the list of columns in the DataFrame
+    existing_columns = data.columns.tolist()
+
+    # Find which columns in column_names are missing from the DataFrame
+    missing_columns = [col for col in column_names if col not in existing_columns]
+
+    # Output the missing columns
+    if missing_columns:
+        print(f"The following columns do not exist: {missing_columns}")
+    else:
+        print("All columns exist in the DataFrame.")
+
+
+def applyPCA(X, n_components_PCA):
+    """
+    Applies PCA to reduce the dimensionality of the data.
+
+    Parameters:
+    X (pd.DataFrame): The feature matrix.
+    n_components_PCA (int): The number of principal components to keep.
+
+    Returns:
+    np.ndarray: The transformed feature matrix.
+    """
+    # Standardize the data
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
+
+    # Apply PCA model
+    pca = PCA(n_components_PCA, svd_solver=svd_solver_PCA)
+    X_pca = pca.fit_transform(X_scaled)
+
+    return X_pca
+
+
+def preprocess_data(data, n_components_PCA=None):
+    """
+    Preprocesses the data by splitting it into features and target, applying PCA, and splitting into training and testing sets.
+
+    Parameters:
+    data (pd.DataFrame): The input data.
+    n_components_PCA (int, optional): The number of principal components to keep. Defaults to None.
+
+    Returns:
+    tuple: The feature matrix, target vector, training and testing sets for features and target.
+    """
+    if 'label' not in data.columns:
+        raise ValueError("The 'label' column is missing from the dataset.")
+
+    # Split data into features (X) and target (y)
+    columns_drop = ['label'] + [col for col in ignore_columns if col in data.columns]
+    X = data.drop(columns_drop, axis=1)  # Features
+    y = data['label']  # Target
+
+    # Apply PCA to reduce dimensionality
+    if n_components_PCA is not None and n_components_PCA > 0:
+        X = applyPCA(X, n_components_PCA)
+
+    # Split data into training and testing sets
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=random_state, stratify=y)
+    return X, y, X_train, X_test, y_train, y_test
+
+
+def classify(X, y, X_train, X_test, y_train, y_test, optimize, model_type, plot_feature_importance=False):
+    """
+    Trains and evaluates a classification model.
+
+    Parameters:
+    X (pd.DataFrame): The feature matrix.
+    y (pd.Series): The target vector.
+    X_train (pd.DataFrame): The training feature matrix.
+    X_test (pd.DataFrame): The testing feature matrix.
+    y_train (pd.Series): The training target vector.
+    y_test (pd.Series): The testing target vector.
+    optimize (str): The optimization method ('None', 'GridSearch', 'RandomizedSearch').
+    model_type (str): The type of model to train ('SVM', 'Random Forest', 'XGBoost', 'KNN', 'Naive Bayes').
+
+    Returns:
+    None
+    """
+    # Select model based on input method
+    if model_type == 'SVM':
+        if optimize == 'None':
+            model = SVC(kernel='rbf', gamma='scale')
+        else:
+            model = make_pipeline(StandardScaler(), SVC())
+            param_grid = {
+                'svc__C': [0.001, 0.01, 0.1, 1, 10],
+                'svc__gamma': ['scale', 'auto', 0.001, 0.0001],
+                'svc__kernel': ['rbf', 'linear']
+            }
+            if optimize == 'GridSearch':
+                search = GridSearchCV(model, param_grid, cv=cv_folds_optimize, n_jobs=-1)
+            elif optimize == 'RandomizedSearch':
+                search = RandomizedSearchCV(model, param_grid, n_iter=n_iter_RandomSearch, cv=cv_folds_optimize, n_jobs=-1, random_state=random_state)
+
+    elif model_type == 'Random Forest':
+        if optimize == 'None':
+            model = RandomForestClassifier()
+        else:
+            model = RandomForestClassifier()
+            param_grid = {
+                'n_estimators': [100, 200, 300],
+                'max_depth': [None, 10, 20, 30],
+                'min_samples_split': [2, 5, 10],
+                'min_samples_leaf': [1, 2, 4],
+                'max_features': ['sqrt', 'log2', 0.5, 0.8],
+                'bootstrap': [True, False]
+            }
+            if optimize == 'GridSearch':
+                search = GridSearchCV(model, param_grid, cv=cv_folds_optimize, n_jobs=-1)
+            elif optimize == 'RandomizedSearch':
+                search = RandomizedSearchCV(model, param_grid, n_iter=n_iter_RandomSearch, cv=cv_folds_optimize, n_jobs=-1, random_state=random_state)
+
+    elif model_type == 'XGBoost':
+        if optimize == 'None':
+            model = XGBClassifier()
+        else:
+            model = XGBClassifier()
+            param_grid = {
+                'n_estimators': [100, 200, 300],
+                'learning_rate': [0.01, 0.1, 0.3],
+                'max_depth': [3, 6, 10],
+                'min_child_weight': [1, 3, 5],
+            }
+            if optimize == 'GridSearch':
+                search = GridSearchCV(model, param_grid, cv=cv_folds_optimize, n_jobs=-1)
+            elif optimize == 'RandomizedSearch':
+                search = RandomizedSearchCV(model, param_grid, n_iter=n_iter_RandomSearch, cv=cv_folds_optimize, n_jobs=-1, random_state=random_state)
+
+    elif model_type == 'KNN':
+        if optimize == 'None':
+            model = KNeighborsClassifier()
+        else:
+            model = KNeighborsClassifier()
+            param_grid = {
+                'n_neighbors': [3, 5, 7, 10, 15],
+                'weights': ['uniform', 'distance'],
+                'metric': ['minkowski', 'euclidean', 'manhattan'],
+                'algorithm': ['auto', 'ball_tree', 'kd_tree', 'brute'],
+                'leaf_size': [20, 30, 40],
+                'p': [1, 2]  # 1: manhattan, 2: euclidean
+            }
+            if optimize == 'GridSearch':
+                search = GridSearchCV(model, param_grid, cv=cv_folds_optimize, n_jobs=-1)
+            elif optimize == 'RandomizedSearch':
+                search = RandomizedSearchCV(model, param_grid, n_iter=n_iter_RandomSearch, cv=cv_folds_optimize, n_jobs=-1, random_state=random_state)
+
+    elif model_type == 'Naive Bayes':
+        if optimize == 'None':
+            model = GaussianNB()
+        else:
+            model = make_pipeline(StandardScaler(), GaussianNB())
+            param_grid = {
+                'gaussiannb__var_smoothing': [1e-14, 1e-13, 1e-12, 1e-11, 1e-10, 1e-9, 1e-8, 1e-7, 1e-6]
+            }
+            if optimize == 'GridSearch':
+                search = GridSearchCV(model, param_grid, cv=cv_folds_optimize, n_jobs=-1)
+            elif optimize == 'RandomizedSearch':
+                search = RandomizedSearchCV(model, param_grid, n_iter=n_iter_RandomSearch, cv=cv_folds_optimize, n_jobs=-1, random_state=random_state)
+
+    else:
+        raise ValueError("Invalid model type. Choose from 'SVM', 'Random Forest', 'XGBoost', 'KNN', 'Naive Bayes'.")
+
+    # If optimizing, use the chosen search method
+    if optimize != 'None':
+        search.fit(X, y)
+        print(f"\nBest parameters found for {model_type}: ", search.best_params_)
+        model = search.best_estimator_
+
+    # Fit the model on the training data
+    model.fit(X_train, y_train)
+
+    # Predict on the test set
+    y_pred = model.predict(X_test)
+
+    # Calculate evaluation metrics
+    accuracy = accuracy_score(y_test, y_pred)
+    f1 = f1_score(y_test, y_pred, average='weighted')  # weighted to handle class imbalance
+    precision = precision_score(y_test, y_pred, average='weighted')  # weighted to handle class imbalance
+    recall = recall_score(y_test, y_pred, average='weighted')  # weighted to handle class imbalance
+
+    # Output results
+    print(f"Results for {model_type}:")
+    print(f"Accuracy: {accuracy:.4f}")
+    print(f"F1 Score: {f1:.4f}")
+    print(f"Precision: {precision:.4f}")
+    print(f"Recall: {recall:.4f}")
+
+    # only if PCA = 0
+    if plot_feature_importance:
+        # Get feature importance
+        feature_importances = model.feature_importances_
+        feature_names = np.array(X.columns)  # Extract feature names
+
+        # Sort and print top 10 features
+        sorted_idx = np.argsort(feature_importances)[::-1]  # Sort descending
+        print(f"\nTop 20 Features for {model_type}:")
+        for i in sorted_idx[:10]:  # Show top 10
+            print(f"{feature_names[i]}: {feature_importances[i]:.4f}")
+
+        # Plot feature importance
+        plt.figure(figsize=(10, 6))
+        plt.barh(feature_names[sorted_idx[:20]], feature_importances[sorted_idx[:20]], color='skyblue')
+        plt.xlabel('Feature Importance')
+        plt.ylabel('Feature Names')
+        plt.title(f'Top 20 Features for {model_type}')
+        plt.gca().invert_yaxis()  # Invert y-axis to show the most important feature at the top
+        plt.show()
+
+
+### Main
+# Define the path to the directory containing the CSV files
+data_path = "C:/Users/MA/Desktop/Maryam_Project/Import_Data"
+ignore_columns = [
+    'patient',
+    'timestamp', 'timestamp_avg', 'timestamp_std',
+    'face_id', 'face_id_avg', 'face_id_std',
+    'confidence', 'confidence_avg', 'confidence_std',
+    'success', 'success_avg', 'success_std',
+    'error_reason', 'error_reason_avg', 'error_reason_std',
+    'dbm_master_url', 'dbm_master_url_avg', 'dbm_master_url_std'
+]
+
+n_components_PCA_list = [0]
+svd_solver_PCA = 'full'  # 'auto', 'full', 'arpack', 'randomized'
+optimize = 'RandomizedSearch'  # 'None', 'GridSearch', 'RandomizedSearch'
+random_state = 17  # Random state seed for reproducibility
+n_iter_RandomSearch = 300  # Number of iterations for RandomizedSearch
+cv_folds_optimize = 5  # Number of cross-validation folds for optimization
+models = ['Random Forest']  # 'Random Forest', 'SVM', 'KNN', 'Naive Bayes', 'XGBoost'
+combine_csv = False # Combine multiple CSV files into a single DataFrame
+
+# Combine all Data into single DataFrame
+if combine_csv:
+    data = getDataFrameFromCSV(data_path)
+    store_DataFrame(data, 'Import_Data/data_avg.csv')
+
+# Import Data and run models for different PCA components
+data = pd.read_csv('Import_Data/data_avg.csv')
+for n_components_PCA in n_components_PCA_list:
+    print(f"\n\nPCA Components: {n_components_PCA}")
+    X, y, X_train, X_test, y_train, y_test = preprocess_data(data, n_components_PCA)
+
+    for model in models:
+        classify(X, y, X_train, X_test, y_train, y_test, optimize, model_type=model, plot_feature_importance=n_components_PCA==0)
+
