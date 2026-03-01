@@ -4,21 +4,16 @@ import re
 from datetime import datetime
 
 # Global variables
-rootFolder = "/home/vault/empkins/tpD/D02/processed_data/processed_iphone_videos_opendbm"
-timesheets_folder = "/home/vault/empkins/tpD/D02/RCT/raw_data"
-skipFolder = ["derived_variables"]
+rootFolder = "./data/processed"
+timesheets_folder = "./data/processed"
+skipFolder = ["variable"]
 skipFile = [
-    "296_t2_20231019_app_1.csv", "296_t2_20231019_app_2.csv",
-    "537_t2_20240301_app_1.csv", "537_t2_20240301_app_2.csv"
+    "1234",
+    "1234"
 ]
 verbose = False  # True for additional status logs
 
-importPatients = [
-    8, 38, 130, 135, 146, 151, 158, 159,
-    161, 162, 173, 175, 221, 228, 231, 245, 249, 253,
-    266, 272, 273, 296, 310, 316, 324, 337, 399, 418,
-    507, 512, 518, 537, 556, 593
-]
+importPatients = [1, 2, 3]
 
 data_approval = pd.DataFrame()
 data_rejection = pd.DataFrame()
