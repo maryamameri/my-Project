@@ -1,0 +1,751 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bootstrap Example</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.5.0/Chart.min.js"></script>
+  <style>
+  
+        .container {
+            margin-top: 20px;
+        }
+
+        .button-container {
+            display: block;
+            margin-top: 10px;
+        }
+
+        .button-container span {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .badge {
+            display: block;
+            width: 18%;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .bg-success {
+            background-color: green;
+            color: white;
+        }
+
+        .bg-danger {
+            background-color: red;
+            color: white;
+        }
+        
+       .chart-container {
+      /* Add styles for the chart container */
+      max-width: 100%;
+      margin: 0 auto;
+    }
+
+    canvas {
+      max-width: 100%;
+      height: auto;
+    }
+    
+    .radio-group {
+    display: flex;
+    align-items: center;
+  }
+
+  .radio-group label {
+    margin-right: 10px;
+  }
+    
+        
+        
+        @media (min-width: 769px) {
+      .chart-container {
+        max-width: 600px;
+        position: absolute;
+        top: 25%;
+        right: 350px;
+        transform: translateY(-50%);
+      }
+
+      canvas {
+        width: 600px;
+      }
+    }
+
+
+    @media (max-width: 768px) {
+      .chart-container {
+        position: static; 
+        max-width: 100%; 
+      }
+
+      canvas {
+        width: 100%; 
+        
+        
+        
+      }
+    }
+    
+    
+    
+    
+    </style>
+</head>
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ <title>Bootstrap Example</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.5.0/Chart.min.js"></script>
+</head>
+<body>
+
+<div class="container mt-3">
+  <h2>Radar Settings</h2>
+  
+
+
+  <form action="/apply_settings">
+    <div class="row mb-3">
+      <div class="col-md-3">
+        <label for="tx-attenuator">TX attenuator (0-31.75)</label>
+      </div>
+      <div class="col-md-9">
+        <input type="text" id="tx-attenuator" name="tx_attenuator">
+        <span id="tx-attenuator-error" class="text-danger"></span>
+        <div id="tx-attenuator-values"></div>
+      </div>
+    </div>
+
+    <div class="row mb-3">
+      <div class="col-md-3">
+        <label for="prf">prf (100kHz – 1MHz)</label>
+      </div>
+      <div class="col-md-9">
+        <input type="text" id="prf" name="prf">
+        <span id="prf-error" class="text-danger"></span>
+        <div id="prf-values"></div>
+      </div>
+    </div>
+
+    <div class="row mb-3">
+      <div class="col-md-3">
+        <label for="spreading-factor">Spreading factor (1000-10000)</label>
+      </div>
+      <div class="col-md-9">
+        <input type="text" id="spreading-factor" name="spreading-factor">
+        <span id="spreading-factor-error" class="text-danger"></span>
+        <div id="spreading-factor-values"></div>
+      </div>
+    </div>
+
+    <div class="row">
+  <div class="col-md-3">
+    <label class="form-check-label" for="check1">Enable RF switch TX</label>
+  </div>
+  <div class="col-md-9">
+    <input type="checkbox" class="form-check-input" id="check1" name="enable_rf_switch_tx">
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-3">
+    <label class="form-check-label" for="check2">Enable RF switch LO</label>
+  </div>
+  <div class="col-md-9">
+    <input type="checkbox" class="form-check-input" id="check2" name="enable_rf_switch_lo">
+  </div>
+</div>
+
+
+    
+
+    <div class="row mt-3">
+      <div class="col-md-12">
+        <button type="button" class="btn btn-primary" id="apply-settings">Apply settings</button>
+        <button type="button" class="btn btn-danger" id="reset-default">Reset default</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+
+
+    </div>
+  </form>
+</div>
+
+
+</body>
+</html>
+
+
+<div class="container mt-3" style="padding-top: 160px;">
+  <h2>Measurement control</h2>
+  
+  
+    <div class="row mb-3">
+  <div class="col-md-3">
+    <label for="Save-directory">Save directory</label>
+  </div>
+  <div class="col-md-9">
+    <input type="text" id="Save-directory" name="save_directory" required>
+    <span id="Save-directory-error" class="text-danger"></span>
+    <div id="Save-directory-values"></div>
+  </div>
+</div>
+    
+    <div class="row">
+  <div class="col-md-3">
+    <label class="form-check-label" for="check2">Enable M-Sequence</label>
+  </div>
+  <div class="col-md-9">
+    <input type="checkbox" class="form-check-input" id="check3" name="enable_m_sequence" value="1">
+  </div>
+</div>
+
+     
+      <div class="row mb-3">
+        <div class="col-md-3">
+          <label for="M-Sequence_len">M-Sequence len (4-14)</label>
+        </div>
+        <div class="col-md-9">
+          <input type="text" id="M-Sequence_len" name="M-Sequence_len">
+          <span id="M-Sequence_len-error" class="text-danger"></span>
+          <div id="M-Sequence_len-values"></div>
+        </div>
+      </div>
+      
+      <div class="row mt-3">
+        <div class="col-md-12">
+          <button type="button" class="btn btn-primary" id="Single-measurement">Single measurement</button>   
+        </div>
+      </div>
+      
+        <div class="row mt-3">
+          <div class="col-md-12">
+            <button type="button" class="btn btn-success" id="Continuous-measurement">Continuous<br>measurement</button>
+            <button type="button" class="btn btn-danger" id="stop-measurement">Stop<br>measurement</button>
+          </div>
+        </div>
+      </form>
+    </div>
+    
+
+
+
+   
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+function resetDefaults() {
+ 
+    
+    $("#tx-attenuator").val("");
+    $("#prf").val("");
+    $("#spreading-factor").val("");
+    $("#check1").prop("checked", true);
+    $("#check2").prop("checked", false);
+
+    // Clear error messages
+    $("#tx-attenuator-error").text("");
+    $("#prf-error").text("");
+    $("#spreading-factor-error").text("");
+  }
+
+  
+  $("#reset-default").click(function() {
+    resetDefaults();
+  });
+
+
+
+
+
+
+$(document).ready(function() {
+  $("#apply-settings").click(function() {
+    var enable_rf_switch_tx = $("#check1").prop("checked") ? 1 : 0;
+    var enable_rf_switch_lo = $("#check2").prop("checked") ? 1 : 0;
+    
+    var prf = $("#prf").val();
+    var txAttenuator = $("#tx-attenuator").val();
+    var SpreadingFactor = $("#spreading-factor").val();
+    
+    txAttenuator = parseFloat(txAttenuator);
+    prf = parseFloat(prf);
+    SpreadingFactor = parseFloat(SpreadingFactor);
+
+    if (isNaN(txAttenuator) || txAttenuator < 0 || txAttenuator > 31.75) {
+      $("#tx-attenuator-error").text("The value is invalid");
+      return; 
+    } else {
+      const calculatedValue = (txAttenuator * 4) % 1;
+      if (calculatedValue !== 0) {
+        $("#tx-attenuator-error").text("The value is invalid");
+        return;
+      } else {
+        $("#tx-attenuator-error").text("");
+      }
+    }
+
+    if (isNaN(prf) || prf < 100 || prf > 1000000) {
+      $("#prf-error").text("The value is invalid");
+      return; 
+    } else {
+      $("#prf-error").text("");
+    }
+    
+    if (isNaN(SpreadingFactor) || SpreadingFactor < 1000 || SpreadingFactor >= 10000) {
+      $("#spreading-factor-error").text("The value is invalid");
+      return; 
+    } else {
+      $("#spreading-factor-error").text("");
+    }
+
+
+
+
+
+    $.ajax({
+      url: '/apply_settings',
+      type: 'POST',
+      data: {
+        tx_attenuator: txAttenuator,
+        prf: prf,
+        spreading_factor: SpreadingFactor,
+        enable_rf_switch_tx: enable_rf_switch_tx,
+        enable_rf_switch_lo: enable_rf_switch_lo,
+      },
+      success: function(data) {
+        console.log(data);
+      },
+      error: function() {
+        console.error("Error sending request");
+      }
+    });
+  });
+});
+</script>
+
+
+<script>
+$(document).ready(function() {
+  $("#Single-measurement").click(function() {
+    var enable_m_sequence = $("#check3").prop("checked") ? 1 : 0;
+    var save_directory = $("#Save-directory").val();
+    var m_sequence_len = $("#M-Sequence_len").val();
+
+    
+    m_sequence_len = parseFloat(m_sequence_len);
+
+    if (isNaN(m_sequence_len) || m_sequence_len < 4 || m_sequence_len > 14) {
+      $("#M-Sequence_len-error").text("The value is invalid. Enter a number between 4 and 14.");
+      return; 
+    } else {
+      $("#M-Sequence_len-error").text("");
+    }
+    
+    
+    $.ajax({
+      url: '/single_measurement',
+      type: 'POST',
+      data: {
+        enable_m_sequence: enable_m_sequence,
+        save_directory: save_directory,
+        m_sequence_len: m_sequence_len,
+      },
+      success: function(data) {
+        
+        console.log(data);
+      },
+      error: function() {
+        
+        console.error("Error sending request");
+      }
+    });
+  });
+ 
+ var enable_m_sequence = $("#check2").prop("checked") ? 1 : 0;
+ 
+});
+</script>
+
+
+
+
+
+
+<div class="container mt-3">
+  <div class="chart-container">
+    <canvas id="myChart" style="width: 600px; height: 400px;"></canvas>
+  </div>
+  
+  
+<div class="text-boxes-container" style="position: absolute; right: 650px; bottom: 200px;">
+  <h2>Measurement</h2>
+  
+  
+     <div class="row mb-3">
+        <div class="col-md-5">
+          <label for="TOM">TOM</label>
+        </div>
+        <div class="col-md-7">
+          <input type="text" id="TOM" name="TOM">
+      </div>
+      
+    </div>
+    <div class="row mb-3">
+      <div class="col-md-5">
+        <label for="Temp-PA">TempPA</label>
+      </div>
+      <div class="col-md-7">
+        <input type="text" id="Temp-PA" name="Temp-PA">
+      </div> 
+     </div>  
+    <div class="row mb-3">
+  <div class="col-md-5">
+    <label for="TX-attenuator">TX&nbsp;attenuator</label>
+  </div>
+  <div class="col-md-7">
+    <input type="text" id="TX-attenuator" name="TX-attenuator">
+  </div> 
+
+       
+       
+    </div>
+    <div class="row mb-3">
+      <div class="col-md-5">
+        <label for="PRF">PRF</label>
+      </div>
+      <div class="col-md-7">
+        <input type="text" id="PRF" name="PRF">
+         </div> 
+       
+    </div>
+    <div class="row mb-3">
+      <div class="col-md-5">
+        <label for="Spreading-factor">Spreading&nbsp;factor</label>
+      </div>
+      <div class="col-md-7">
+        <input type="text" id="Spreading-factor" name="Spreading-factor">
+         </div>  
+         
+    </div>
+    <div class="row mb-3">
+      <div class="col-md-5">
+        <label for="M-sequence-enabled">M-Sequence enabled</label>
+      </div>
+      <div class="col-md-7">
+        <input type="text" id="M-sequence-enabled" name="M-sequence-enabled">
+         </div>      
+         
+     </div>
+     <div class="row mb-3">
+       <div class="col-md-5">
+         <label for="M-Sequence-len">M-Sequence len</label>
+       </div>
+       <div class="col-md-7">
+         <input type="text" id="M-Sequence-len" name="M-Sequence-len">
+          </div>     
+   
+       
+       
+ </form>
+</div>
+
+<div class="text-boxes-container" style="position: absolute; left: 520px; bottom: -80px;">
+  <h2>Plot&nbsp;options</h2>
+  
+  <div class="row mb-6">
+  <div class="col-md-6">
+    <label class="form-check-label" for="check4">Update&nbsp;plot</label>
+  </div>
+  <div class="col-md-6">
+    <input type="checkbox" class="form-check-input" id="check4" name="update_plot">
+  </div>
+</div>
+
+ <div class="row mb-3">
+   <div class="col-md-5">
+     <label for="Eps-r">Eps_r</label>
+   </div>
+   <div class="col-md-7">
+     <input type="text" id="Eps-r" name="Eps-r">
+      </div>
+      </div>  
+
+<div class="row mb-3">
+  <div class="col-md-5">
+    <label for="trigger">Trigger</label>
+  </div>
+  
+  <div class="col-md-7 d-flex align-items-center">
+    <input type="radio" id="contactChoice1" name="contact" value="0"/>
+    <label for="contactChoice1" class="me-3">0</label>
+
+    <input type="radio" id="contactChoice2" name="contact" value="1"/>
+    <label for="contactChoice2" class="me-3">1</label>
+
+    <input type="radio" id="contactChoice3" name="contact" value="2"/>
+    <label for="contactChoice3" class="me-3">2</label>
+    
+    <input type="radio" id="contactChoice4" name="contact" value="3"/>
+    <label for="contactChoice4" class="me-3">3</label>
+
+  </div> 
+</div>
+
+<div class="row mb-3">
+  <div class="col-md-5">
+    <label for="adc">ADC</label>
+  </div>
+  
+  <div class="col-md-7 d-flex align-items-center">
+    <div class="form-check form-check-inline">
+      <input class="form-check-input" type="checkbox" id="adcChoice1" name="adc" value="0">
+      <label class="form-check-label" for="adcChoice1">0</label>
+    </div>
+    
+    <div class="form-check form-check-inline">
+      <input class="form-check-input" type="checkbox" id="adcChoice2" name="adc" value="1">
+      <label class="form-check-label" for="adcChoice2">1</label>
+    </div>
+    
+    <div class="form-check form-check-inline">
+      <input class="form-check-input" type="checkbox" id="adcChoice3" name="adc" value="2">
+      <label class="form-check-label" for="adcChoice3">2</label>
+    </div>
+    
+    <div class="form-check form-check-inline">
+      <input class="form-check-input" type="checkbox" id="adcChoice4" name="adc" value="3">
+      <label class="form-check-label" for="adcChoice4">3</label>
+    </div>
+  </div>
+</div>
+
+<div class="row mb-3">
+  <div class="col-md-5">
+    <label for="adc">ADC LPF</label>
+  </div>
+  
+  <div class="col-md-7 d-flex align-items-center">
+    <div class="form-check form-check-inline">
+      <input class="form-check-input" type="checkbox" id="adcChoice1" name="adc" value="0">
+      <label class="form-check-label" for="adcChoice1">0</label>
+    </div>
+    
+    <div class="form-check form-check-inline">
+      <input class="form-check-input" type="checkbox" id="adcChoice2" name="adc" value="1">
+      <label class="form-check-label" for="adcChoice2">1</label>
+    </div>
+    
+    <div class="form-check form-check-inline">
+      <input class="form-check-input" type="checkbox" id="adcChoice3" name="adc" value="2">
+      <label class="form-check-label" for="adcChoice3">2</label>
+    </div>
+    
+    <div class="form-check form-check-inline">
+      <input class="form-check-input" type="checkbox" id="adcChoice4" name="adc" value="3">
+      <label class="form-check-label" for="adcChoice4">3</label>
+    </div>
+  </div>
+</div>
+
+
+<div class="row mb-3">
+  <div class="col-md-6">
+    <label for="x-limit-min">X lim min</label>
+  </div>
+  
+  <div class="col-md-4">
+    <input type="text" id="x-limit-min" name="x_limit_min" class="form-control form-control-sm">
+  </div>
+  
+  <div class="col-md-2 d-flex align-items-center">
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" id="enable-x-limit-min" name="enable_x_limit_min">
+      <label class="form-check-label" for="enable-x-limit-min">Enable</label>
+    </div>
+  </div>
+</div>
+
+<div class="row mb-3">
+  <div class="col-md-6">
+    <label for="x-limit-min">X lim max</label>
+  </div>
+  
+  <div class="col-md-4">
+    <input type="text" id="x-limit-min" name="x_limit_min" class="form-control form-control-sm">
+  </div>
+  
+  <div class="col-md-2 d-flex align-items-center">
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" id="enable-x-limit-min" name="enable_x_limit_min">
+      <label class="form-check-label" for="enable-x-limit-min">Enable</label>
+    </div>
+  </div>
+</div>
+
+
+<div class="row mb-3">
+  <div class="col-md-6">
+    <label for="x-limit-min">Y lim min</label>
+  </div>
+  
+  <div class="col-md-4">
+    <input type="text" id="x-limit-min" name="x_limit_min" class="form-control form-control-sm">
+  </div>
+  
+  <div class="col-md-2 d-flex align-items-center">
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" id="enable-x-limit-min" name="enable_x_limit_min">
+      <label class="form-check-label" for="enable-x-limit-min">Enable</label>
+    </div>
+  </div>
+</div>
+
+
+<div class="row mb-3">
+  <div class="col-md-6">
+    <label for="x-limit-min">Y lim max</label>
+  </div>
+  
+  <div class="col-md-4">
+    <input type="text" id="x-limit-min" name="x_limit_min" class="form-control form-control-sm">
+  </div>
+  
+  <div class="col-md-2 d-flex align-items-center">
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" id="enable-x-limit-min" name="enable_x_limit_min">
+      <label class="form-check-label" for="enable-x-limit-min">Enable</label>
+    </div>
+  </div>
+</div>
+
+<div class="row mt-3">
+  <div class="col-md-12">
+    <button type="button" class="btn btn-danger" id="Continuous-measurement">Default</button>
+    <button type="button" class="btn btn-primary" id="stop-measurement">Apply</button>
+  </div>
+</div>
+ 
+<script>
+
+
+var myChart;
+
+var isUpdating = true;
+
+function updateChart(newData) {
+  console.log("New data received:", newData);
+  myChart.data.datasets[0].data = newData.y_values;
+  myChart.update();
+  $("#TOM").val(newData.TOM);
+  var randomXLimitMin = Math.floor(Math.random() * 1001);
+    $("#x-limit-min").val(randomXLimitMin);
+    var randomXLimitMax = Math.floor(Math.random() * 1000) + 1;
+    $("#x-limit-max").val(randomXLimitMax);
+  
+}
+
+$(document).ready(function() {
+  var ctx = document.getElementById("myChart").getContext("2d");
+
+  var initialLabels = ['0', '20', '40', '60', '80']; 
+  var initialData = []; 
+
+  myChart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: initialLabels,
+      datasets: [
+        {
+          fill: false,
+          pointRadius: 2,
+          borderColor: "rgba(0,0,255,0.5)",
+          data: initialData,
+        },
+      ],
+    },
+    options: {
+      scales: {
+        x: {
+          beginAtZero: true,
+        },
+        y: {
+          beginAtZero: true,
+        },
+      },
+      legend: { display: false },
+      title: {
+        display: false,
+        text: "y = sin(x)",
+        fontSize: 16,
+      },
+    },
+  });
+
+  
+  function fetchDataAndUpdateChart() {
+  if (isUpdating) {
+    $.getJSON('/get_data', function(data) {
+      console.log("Fetched data:", data);
+      updateChart(data);
+      var randomTemperature = (Math.random() * 100).toFixed(1);
+      $("#Temp-PA").val(randomTemperature + "° C");
+      var randomTXAttenuator = (Math.random() * 31.75).toFixed(2);
+    $("#TX-attenuator").val(randomTXAttenuator + " dB");
+    var randomPRF = Math.floor(Math.random() * (1000000 - 100000 + 1)) + 100000;
+    if (randomPRF >= 1000000) {
+      $("#PRF").val((randomPRF / 1000000).toFixed(2) + " MHz");
+    } else {
+      $("#PRF").val(randomPRF + " kHz");
+    }
+    var randomSpreadingFactor = Math.floor(Math.random() * (10000 - 100 + 1)) + 100;
+    $("#Spreading-factor").val(randomSpreadingFactor);
+    var mSequenceEnabled = Math.random() < 0.5 ? 'Yes' : 'No';
+    $("#M-sequence-enabled").val(mSequenceEnabled);
+    var randomMSequenceLen = Math.floor(Math.random() * (14 - 4 + 1)) + 4;
+    $("#M-Sequence-len").val(randomMSequenceLen);
+    
+    var randomXLimitMin = Math.floor(Math.random() * 1001);
+        $("#x-limit-min").val(randomXLimitMin);
+        
+        var randomXLimitMax = Math.floor(Math.random() * 1000) + 1;
+        $("#x-limit-max").val(randomXLimitMax);
+    });
+    }
+  }
+
+ $('#check4').change(function() {
+    isUpdating = !$(this).is(':checked');
+  });
+  
+  setInterval(fetchDataAndUpdateChart, 5000);
+});
+</script>
+
+
+
+
+
+</body>
+</html>
+
+
